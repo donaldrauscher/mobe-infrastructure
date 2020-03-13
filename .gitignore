@@ -1,0 +1,6 @@
+.idea/
+.terraform/
+kubeconfig**
+terraform.tfstate**
+config_map_aws_auth.yaml
+cert/
