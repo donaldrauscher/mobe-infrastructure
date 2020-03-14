@@ -20,7 +20,7 @@ Build infrastructure with Terraform:
 terraform init
 terraform plan -var "bastion_key=$(cat ~/.ssh/id_rsa.pub)"
 terraform apply -var "bastion_key=$(cat ~/.ssh/id_rsa.pub)"
-terraform output config_map_aws_auth >> config_map_aws_auth.yaml
+terraform output config_map_aws_auth > config_map_aws_auth.yaml
 ```
 
 
@@ -60,10 +60,22 @@ helm repo add stable https://kubernetes-charts.storage.googleapis.com
 
 NOTE: Tiller is gone as of Helm 3!  Helm's permissions are not evaluated based on the user's kubeconfig.
 
+
 ### Setup EFS CSI Driver for PV
+
 
 ### Setup Autoscaler
 
+
 ### Setup Nginx Ingress Controller
 
-Lastly, set up Route 53 record which maps wildcard domain to the ELB created by above process.
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+kubectl apply -f k8s/nginx_load_balancer.yaml
+```
+
+Sources: 
+- [https://kubernetes.github.io/ingress-nginx/deploy/](https://kubernetes.github.io/ingress-nginx/deploy/)
+- [https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html](https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html)
+
+Lastly, set up Route 53 record which maps wildcard domain to the NLB created by above process.

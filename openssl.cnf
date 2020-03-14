@@ -10,7 +10,7 @@ x509_extensions = v3_req
 countryName = US
 organizationName = MOBE
 organizationalUnitName = Data Science
-commonName = *.mobe.donaldrauscher.com
+commonName = *.docker.mobecloud.net
 emailAddress = donald.rauscher@mobeforlife.com
 
 [ v3_req ]
@@ -18,4 +18,4 @@ basicConstraints = critical,CA:TRUE
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = *.mobe.donaldrauscher.com
+DNS.1 = *.docker.mobecloud.net

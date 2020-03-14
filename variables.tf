@@ -18,5 +18,5 @@ variable "bastion_key" {
 }
 
 variable "internal_domain" {
-  default = "mobe.donaldrauscher.com"
+  default = "docker.mobecloud.net"
 }
