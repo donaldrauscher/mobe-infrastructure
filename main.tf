@@ -89,6 +89,8 @@ provider "kubernetes" {
 
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
+  version = "~> 10.0"
+  
   cluster_name = var.eks_cluster_name
   cluster_version = "1.14"
 
@@ -107,10 +109,74 @@ module "eks" {
       asg_min_size = 2
 	  asg_desired_capacity = 2
       asg_max_size = 5
-      autoscaling_enabled = true
       protect_from_scale_in = true
+      tags = [
+        {
+          key = "k8s.io/cluster-autoscaler/enabled"
+          propagate_at_launch = false
+          value = true
+        },
+        {
+          key = "k8s.io/cluster-autoscaler/${var.eks_cluster_name}"
+          propagate_at_launch = false
+          value = true
+        }
+      ]	  
     }
   ]
+}
+
+resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
+  role = module.eks.worker_iam_role_name
+  policy_arn = aws_iam_policy.worker_autoscaling.arn
+}
+
+resource "aws_iam_policy" "worker_autoscaling" {
+  name = "WorkerAutoscalingIAMPolicy"
+  description = "EKS worker node autoscaling policy"
+  policy = data.aws_iam_policy_document.worker_autoscaling.json
+}
+
+data "aws_iam_policy_document" "worker_autoscaling" {
+  statement {
+    sid    = "eksWorkerAutoscalingAll"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeTags",
+      "ec2:DescribeLaunchTemplateVersions",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerAutoscalingOwn"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "autoscaling:UpdateAutoScalingGroup",
+    ]
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${module.eks.cluster_id}"
+      values   = ["owned"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
+      values   = ["true"]
+    }
+  }
 }
 
 
@@ -153,28 +219,27 @@ resource "aws_efs_mount_target" "cluster_pv_mount" {
   security_groups = [module.cluster_pv_sg.this_security_group_id]
 }
 
-resource "aws_iam_policy" "efs_provisioner_policy" {
-  name = "EFSProvisionerIAMPolicy"
-  description = "IAM Policy for EFS Provisioner"
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "elasticfilesystem:DescribeFileSystems"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-EOF
-}
-
 resource "aws_iam_role_policy_attachment" "efs_provisioner_policy_attach" {
   role = module.eks.worker_iam_role_name
   policy_arn = aws_iam_policy.efs_provisioner_policy.arn
+}
+
+resource "aws_iam_policy" "efs_provisioner_policy" {
+  name = "EFSProvisionerIAMPolicy"
+  description = "IAM Policy for EFS Provisioner"
+  policy = data.aws_iam_policy_document.efs_provisioner_policy.json
+}
+
+data "aws_iam_policy_document" "efs_provisioner_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "elasticfilesystem:DescribeFileSystems"
+    ]
+
+    resources = ["*"]
+  }
 }
 
 

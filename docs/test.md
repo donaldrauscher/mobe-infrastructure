@@ -89,3 +89,14 @@ sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,ret
 sudo ls /data/efs/efs-test-pvc-*
 sudo umount /data/efs
 ```
+
+### Testing autoscaler
+
+Simple deployment:
+```
+kubectl create deployment autoscaler-demo --image=nginx
+kubectl scale deployment autoscaler-demo --replicas=50
+```
+
+Should see add'l nodes get created!
+

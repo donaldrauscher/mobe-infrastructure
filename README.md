@@ -80,6 +80,12 @@ Source: [https://github.com/kubernetes-incubator/external-storage/tree/master/aw
 
 ### Setup Autoscaler
 
+```
+helm upgrade --install cluster-autoscaler stable/cluster-autoscaler -f k8s/autoscaler_values.yaml -n kube-system
+```
+
+Sources [https://github.com/terraform-aws-modules/terraform-aws-eks/blob/master/docs/autoscaling.md](https://github.com/terraform-aws-modules/terraform-aws-eks/blob/master/docs/autoscaling.md)
+
 
 ### Setup Nginx Ingress Controller
 
