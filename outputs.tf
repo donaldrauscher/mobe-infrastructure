@@ -50,3 +50,13 @@ output "internal_cert_arn" {
   description = "Internal certificate ARN"
   value = aws_iam_server_certificate.internal_cert.arn
 }
+
+output "efs_id" {
+  description = "EFS filesystem id"
+  value = aws_efs_file_system.cluster_pv.id
+}
+
+output "efs_dns" {
+  description = "EFS DNS"
+  value = aws_efs_file_system.cluster_pv.dns_name
+}

@@ -42,11 +42,16 @@ sudo curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-
 sudo chmod -R +x /usr/local/bin/
 ```
 
-Finally, apply AWS auth config (from bastion):
+Apply AWS auth config (from bastion):
 ```
 kubectl apply -f config_map_aws_auth.yaml
 ```
 
+Copy other K8s stuff to bastion:
+```
+ssh ubuntu@$MOBE_BASTION "mkdir -p ~/k8s"
+scp -r k8s ubuntu@$MOBE_BASTION:~/
+```
 
 ### Setup Helm
 
@@ -61,7 +66,16 @@ helm repo add stable https://kubernetes-charts.storage.googleapis.com
 NOTE: Tiller is gone as of Helm 3!  Helm's permissions are not evaluated based on the user's kubeconfig.
 
 
-### Setup EFS CSI Driver for PV
+### Setup EFS PV Provisioner
+
+Firstly, update `yourEFSsystemid` and `regionyourEFSisin` with the EFS file system id you created (see Terraform outputs).  Will need to update ConfigMap variables as well as NFS server path in Deployment.
+
+Then, deploy:
+```
+kubectl apply -f k8s/efs_provisioner.yaml
+```
+
+Source: [https://github.com/kubernetes-incubator/external-storage/tree/master/aws/efs](https://github.com/kubernetes-incubator/external-storage/tree/master/aws/efs)
 
 
 ### Setup Autoscaler
@@ -74,8 +88,8 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ngin
 kubectl apply -f k8s/nginx_load_balancer.yaml
 ```
 
+Lastly, set up Route 53 record which maps wildcard domain to the NLB created by above process.
+
 Sources: 
 - [https://kubernetes.github.io/ingress-nginx/deploy/](https://kubernetes.github.io/ingress-nginx/deploy/)
 - [https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html](https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html)
-
-Lastly, set up Route 53 record which maps wildcard domain to the NLB created by above process.

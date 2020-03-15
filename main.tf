@@ -115,6 +115,63 @@ module "eks" {
 
 
 ###########################
+# EFS FILESYSTEM
+###########################
+
+resource "aws_efs_file_system" "cluster_pv" {
+  creation_token = "cluster-pv"
+}
+
+module "cluster_pv_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 3.0"
+
+  name = "${var.eks_cluster_name}-pv-sg"
+  vpc_id = module.vpc.vpc_id
+
+  ingress_with_source_security_group_id = [
+    {
+	  description = "Allow EKS workers to mount EFS filesystem"
+	  protocol = "tcp"
+      from_port = 2049
+      to_port = 2049
+      source_security_group_id = module.eks.worker_security_group_id
+    }
+  ]
+}
+
+resource "aws_efs_mount_target" "cluster_pv_mount" {
+  file_system_id = aws_efs_file_system.cluster_pv.id
+  subnet_id = module.vpc.private_subnets.0
+  security_groups = [module.cluster_pv_sg.this_security_group_id]
+}
+
+resource "aws_iam_policy" "efs_provisioner_policy" {
+  name = "EFSProvisionerIAMPolicy"
+  description = "IAM Policy for EFS Provisioner"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:DescribeFileSystems"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "efs_provisioner_policy_attach" {
+  role = module.eks.worker_iam_role_name
+  policy_arn = aws_iam_policy.efs_provisioner_policy.arn
+}
+
+
+###########################
 # BASTION HOST
 ###########################
 
