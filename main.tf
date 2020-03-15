@@ -136,7 +136,14 @@ module "cluster_pv_sg" {
       from_port = 2049
       to_port = 2049
       source_security_group_id = module.eks.worker_security_group_id
-    }
+    },
+    {
+	  description = "Allow bastion host to mount EFS filesystem"
+	  protocol = "tcp"
+      from_port = 2049
+      to_port = 2049
+      source_security_group_id = module.bastion_sg.this_security_group_id
+    }	
   ]
 }
 
